@@ -826,3 +826,10 @@
     animation-duration: 0.01ms !important;
   }
 }
+.checkout-field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--checkout-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}

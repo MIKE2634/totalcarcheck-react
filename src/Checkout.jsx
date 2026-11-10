@@ -67,6 +67,26 @@ function luhnValid(number) {
   return sum % 10 === 0;
 }
 
+// Basic email format + domain sanity check
+function isValidEmail(value) {
+  const trimmed = value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmed)) return false;
+
+  const domain = trimmed.split("@")[1].toLowerCase();
+  // Reject obviously fake / disposable domains
+  const blocked = [
+    "example.com",
+    "example.org",
+    "test.com",
+    "mailinator.com",
+    "tempmail.com",
+    "10minutemail.com",
+    "guerrillamail.com",
+    "yopmail.com",
+  ];
+  return !blocked.includes(domain);
+}
+
 export default function Checkout() {
   const [registration, setRegistration] = useState("");
   const [customerName, setCustomerName] = useState("");
@@ -100,6 +120,7 @@ export default function Checkout() {
       .toUpperCase()
       .replace(/\s+/g, "");
     const cleanCardNumber = cardNumber.replace(/\s+/g, "");
+    const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanRegistration) {
       setError("Please enter the vehicle registration.");
@@ -116,11 +137,16 @@ export default function Checkout() {
       return;
     }
 
-    if (
-      email.trim() &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-    ) {
-      setError("Please enter a valid email address.");
+    // ── Email is now REQUIRED and must be valid ────────────
+    if (!cleanEmail) {
+      setError("Please enter the email address registered with your bank.");
+      return;
+    }
+
+    if (!isValidEmail(cleanEmail)) {
+      setError(
+        "Please enter a valid email address (example.com and disposable domains are not accepted)."
+      );
       return;
     }
 
@@ -131,6 +157,28 @@ export default function Checkout() {
 
     if (!cardholderName.trim()) {
       setError("Please enter the name on the card.");
+      return;
+    }
+
+    // ── Cardholder name should match the bank account holder ─
+    // If the user typed a full name for billing, the card name must
+    // share at least one word with it (loose check to allow "J. Smith").
+    const nameWords = customerName
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    const cardWords = cardholderName
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean);
+    const namesOverlap = cardWords.some((w) => nameWords.includes(w));
+
+    if (!namesOverlap) {
+      setError(
+        "The name on the card must match the billing name and the name registered with your bank."
+      );
       return;
     }
 
@@ -154,7 +202,7 @@ export default function Checkout() {
           vehicle_registration: cleanRegistration,
           customer_name: customerName.trim(),
           date_of_birth: dateOfBirth,
-          customer_email: email.trim(),
+          customer_email: cleanEmail,
           billing_address: address.trim(),
           billing_city: city.trim(),
           billing_postcode: postcode.trim().toUpperCase(),
@@ -381,8 +429,11 @@ export default function Checkout() {
                 />
               </div>
 
+              {/* ── Email is REQUIRED and tied to the bank account ── */}
               <div className="checkout-field">
-                <label htmlFor="email">Email address (optional)</label>
+                <label htmlFor="email">
+                  Email registered with your bank
+                </label>
                 <input
                   id="email"
                   type="email"
@@ -391,7 +442,11 @@ export default function Checkout() {
                   placeholder="you@example.com"
                   maxLength={254}
                   autoComplete="email"
+                  required
                 />
+                <small className="checkout-field-hint">
+                  Must match the email linked to the card used for payment.
+                </small>
               </div>
 
               <div className="checkout-field">
@@ -485,6 +540,9 @@ export default function Checkout() {
                   autoComplete="cc-name"
                   required
                 />
+                <small className="checkout-field-hint">
+                  Must match the name registered with your bank.
+                </small>
               </div>
 
               <div className="checkout-field">

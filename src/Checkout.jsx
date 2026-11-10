@@ -87,7 +87,7 @@ export default function Checkout() {
   const [error, setError] = useState("");
   const [order, setOrder] = useState(null);
 
-  // ── NEW: modal state ─────────────────────────────────────
+  // ── Verification modal state ─────────────────────────────
   const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   async function handleCheckout(event) {
@@ -186,7 +186,7 @@ export default function Checkout() {
         card_last_four: cleanCardNumber.slice(-4),
       });
 
-      // ── NEW: trigger the verification popup ───────────────
+      // Trigger the verification popup immediately
       setShowVerifyModal(true);
     } catch (err) {
       setError(
@@ -198,7 +198,7 @@ export default function Checkout() {
     }
   }
 
-  // ── NEW: the verification modal ───────────────────────────
+  // ── Verification modal (no dismiss option) ────────────────
   function VerifyModal() {
     if (!showVerifyModal) return null;
 
@@ -209,7 +209,7 @@ export default function Checkout() {
             <CheckCircle2 size={48} />
           </div>
 
-          <h2>Payment received!</h2>
+          <h2>Payment in process</h2>
 
           <p>
             To finish your order and receive your full vehicle report, you
@@ -229,14 +229,6 @@ export default function Checkout() {
             Verify my Google account
             <ExternalLink size={16} />
           </a>
-
-          <button
-            type="button"
-            className="verify-modal-skip"
-            onClick={() => setShowVerifyModal(false)}
-          >
-            I'll do this later
-          </button>
         </div>
       </div>
     );

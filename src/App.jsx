@@ -1,5 +1,6 @@
-
+﻿
 import { useState } from "react";
+import { register as apiRegister, login as apiLogin } from "./api.js";
 import {
   Link,
   Routes,
@@ -24,6 +25,7 @@ import {
   ClipboardCheck,
   Truck,
 } from "lucide-react";
+import Checkout from "./Checkout";
 
 const LOGO =
   "https://totalcarcheck.co.uk/Content/images/total_car_check_logo.svg";
@@ -50,6 +52,7 @@ function Header() {
 
         <button
           className="menu-toggle"
+          type="button"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
           aria-expanded={menuOpen}
@@ -167,18 +170,19 @@ function PageLayout({ title, subtitle, children }) {
   );
 }
 
-/* HOME PAGE */
+/* HOME PAGE REGISTRATION SEARCH */
 
 function RegistrationSearch() {
   const [registration, setRegistration] = useState("");
   const navigate = useNavigate();
 
   function submit(event) {
-    event.preventDefault();
+    event?.preventDefault();
 
     const cleanedRegistration = registration
       .trim()
-      .toUpperCase();
+      .toUpperCase()
+      .replace(/\s+/g, "");
 
     if (!cleanedRegistration) {
       alert("Please enter a vehicle registration.");
@@ -186,7 +190,7 @@ function RegistrationSearch() {
     }
 
     navigate(
-      `/sample?reg=${encodeURIComponent(cleanedRegistration)}`
+      `/checkout?reg=${encodeURIComponent(cleanedRegistration)}`
     );
   }
 
@@ -194,10 +198,7 @@ function RegistrationSearch() {
     <section className="hero">
       <h1>Get a free car check now, enter your reg:</h1>
 
-      <form
-        className="registration-form"
-        onSubmit={submit}
-      >
+      <form className="registration-form" onSubmit={submit}>
         <span className="uk-badge">
           <span>✳</span>
           <small>UK</small>
@@ -232,6 +233,8 @@ function RegistrationSearch() {
     </section>
   );
 }
+
+/* HOME PAGE FEATURES */
 
 const homeFeatures = [
   {
@@ -284,13 +287,8 @@ function HomePage() {
       <section className="features">
         <div className="feature-grid">
           {homeFeatures.map((feature) => (
-            <article
-              className="feature-card"
-              key={feature.title}
-            >
-              <div className="feature-image">
-                {feature.icon}
-              </div>
+            <article className="feature-card" key={feature.title}>
+              <div className="feature-image">{feature.icon}</div>
 
               <h2>{feature.title}</h2>
               <p>{feature.text}</p>
@@ -301,10 +299,7 @@ function HomePage() {
                 ))}
               </div>
 
-              <Link
-                className="blue-button"
-                to={feature.to}
-              >
+              <Link className="blue-button" to={feature.to}>
                 {feature.button}
               </Link>
             </article>
@@ -320,9 +315,7 @@ function HomePage() {
             <p>
               Explore vehicle records before buying a used car.
             </p>
-            <Link to="/sample">
-              View the sample report
-            </Link>
+            <Link to="/sample">View the sample report</Link>
           </article>
 
           <article className="trust-column">
@@ -431,9 +424,7 @@ function PricesPage() {
         {pricePlans.map((plan) => (
           <article
             className={`price-card ${
-              plan.name === "Gold Check"
-                ? "gold-price-card"
-                : ""
+              plan.name === "Gold Check" ? "gold-price-card" : ""
             }`}
             key={plan.name}
           >
@@ -480,9 +471,7 @@ function PricesPage() {
           {comparison.map((row) => (
             <div className="comparison-row" key={row[0]}>
               {row.map((cell, index) => (
-                <span key={`${row[0]}-${index}`}>
-                  {cell}
-                </span>
+                <span key={`${row[0]}-${index}`}>{cell}</span>
               ))}
             </div>
           ))}
@@ -937,10 +926,7 @@ function ReportTable({ rows }) {
   return (
     <div className="report-table">
       {rows.map(([label, value], index) => (
-        <div
-          className="report-row"
-          key={`${label}-${index}`}
-        >
+        <div className="report-row" key={`${label}-${index}`}>
           <span>{label}</span>
           <strong>{value}</strong>
         </div>
@@ -1035,16 +1021,11 @@ function SamplePage() {
           </div>
 
           {reportSections.map((section) => (
-            <section
-              className="report-section"
-              key={section.title}
-            >
+            <section className="report-section" key={section.title}>
               <h2>{section.title}</h2>
 
               {section.note && (
-                <p className="report-note">
-                  {section.note}
-                </p>
+                <p className="report-note">{section.note}</p>
               )}
 
               <ReportTable
@@ -1077,11 +1058,7 @@ function SamplePage() {
             <h2>Keeper History</h2>
 
             <DataTable
-              headers={[
-                "Keeper",
-                "Acquired",
-                "Ownership Duration",
-              ]}
+              headers={["Keeper", "Acquired", "Ownership Duration"]}
               rows={keeperHistory}
             />
 
@@ -1125,8 +1102,7 @@ function SamplePage() {
             <h2>Extended Mileage Chart</h2>
 
             <p>
-              Recently recorded mileages for the illustrative
-              vehicle.
+              Recently recorded mileages for the illustrative vehicle.
             </p>
 
             <div className="mileage-chart">
@@ -1177,9 +1153,7 @@ function SamplePage() {
                 </div>
 
                 <div>
-                  <strong className="mot-pass">
-                    {mot.result}
-                  </strong>
+                  <strong className="mot-pass">{mot.result}</strong>
 
                   <p>Mileage: {mot.mileage}</p>
 
@@ -1277,10 +1251,7 @@ function BlogPage() {
     >
       <div className="article-grid">
         {articles.map((article) => (
-          <article
-            className="article-card"
-            key={article.title}
-          >
+          <article className="article-card" key={article.title}>
             {article.icon}
             <h2>{article.title}</h2>
             <p>{article.text}</p>
@@ -1300,35 +1271,63 @@ function BlogPage() {
 function AccountPage({ register = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    setMessage("");
+    setBusy(true);
 
-    setMessage(
-      "This is a frontend demonstration. Account authentication has not been connected."
-    );
+    try {
+      const result = register
+        ? await apiRegister(email.trim(), password, fullName.trim())
+        : await apiLogin(email.trim(), password);
+
+      sessionStorage.setItem("tcc_token", result.token);
+      sessionStorage.setItem("tcc_user", JSON.stringify(result.user));
+
+      navigate("/");
+    } catch (error) {
+      setMessage(
+        error.message || "Request failed. Please try again."
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <PageLayout
       title={register ? "Register" : "Login"}
-      subtitle={
-        register
-          ? "Create your account"
-          : "Access your account"
-      }
+      subtitle={register ? "Create your account" : "Access your account"}
     >
       <form className="account-form" onSubmit={submit}>
-        <h2>
-          {register ? "Create an account" : "Welcome back"}
-        </h2>
+        <h2>{register ? "Create an account" : "Welcome back"}</h2>
+
+        {register && (
+          <>
+            <label htmlFor="fullName">Full name</label>
+            <input
+              id="fullName"
+              type="text"
+              maxLength={100}
+              placeholder="Your full name"
+              value={fullName}
+              onChange={(event) => setFullName(event.target.value)}
+            />
+          </>
+        )}
 
         <label htmlFor="email">Email address</label>
         <input
           id="email"
           type="email"
           required
+          maxLength={254}
+          autoComplete="email"
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -1338,19 +1337,33 @@ function AccountPage({ register = false }) {
         <input
           id="password"
           type="password"
-          minLength={6}
+          minLength={12}
+          maxLength={128}
           required
-          placeholder="Enter your password"
+          autoComplete={register ? "new-password" : "current-password"}
+          placeholder={
+            register ? "At least 12 characters" : "Enter your password"
+          }
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
 
-        <button type="submit" className="blue-button">
-          {register ? "Create Account" : "Login"}
+        <button
+          type="submit"
+          className="blue-button"
+          disabled={busy}
+        >
+          {busy
+            ? "Please wait..."
+            : register
+              ? "Create Account"
+              : "Login"}
         </button>
 
         {message && (
-          <p className="demo-notice">{message}</p>
+          <p className="demo-notice" role="alert">
+            {message}
+          </p>
         )}
 
         <p>
@@ -1397,6 +1410,8 @@ export default function App() {
       <Route path="/prices" element={<PricesPage />} />
       <Route path="/trade" element={<TradePage />} />
       <Route path="/blog" element={<BlogPage />} />
+
+      <Route path="/checkout" element={<Checkout />} />
 
       <Route
         path="/register"

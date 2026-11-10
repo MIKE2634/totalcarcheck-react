@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL;
+﻿const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://totalcarcheck-api.mikaelmika263.workers.dev";
 
 export async function apiRequest(path, options = {}) {
   const { token, ...rest } = options;
@@ -6,16 +8,27 @@ export async function apiRequest(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     ...rest,
     headers: {
-      "Content-Type": "application/json",
+      ...(rest.body ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...rest.headers,
     },
   });
 
-  const result = await response.json();
+  const text = await response.text();
+  let result = {};
+
+  if (text.trim()) {
+    try {
+      result = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Server returned invalid JSON (HTTP ${response.status}).`
+      );
+    }
+  }
 
   if (!response.ok) {
-    throw new Error(result.error || "Request failed");
+    throw new Error(result.error || `Request failed (HTTP ${response.status}).`);
   }
 
   return result;

